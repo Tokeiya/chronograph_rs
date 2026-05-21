@@ -78,4 +78,37 @@ mod tests {
 
         _ = Elapsed::new(recorded_at, recent, pivot);
     }
+
+    #[test]
+    fn recorded_at() {
+        let recorded_at = Instant::now();
+        let recent = recorded_at - Duration::from_secs(1);
+        let pivot = recorded_at - Duration::from_secs(10);
+
+        let fixture = Elapsed::new(recorded_at, recent, pivot);
+
+        assert_eq!(fixture.recorded_at, recorded_at);
+    }
+
+    #[test]
+    fn lap() {
+        let recorded_at = Instant::now();
+        let recent = recorded_at - Duration::from_secs(1);
+        let pivot = recorded_at - Duration::from_secs(10);
+
+        let fixture = Elapsed::new(recorded_at, recent, pivot);
+
+        assert_eq!(fixture.lap, Duration::from_secs(1));
+    }
+
+    #[test]
+    fn split() {
+        let recorded_at = Instant::now();
+        let recent = recorded_at - Duration::from_secs(1);
+        let pivot = recorded_at - Duration::from_secs(10);
+
+        let fixture = Elapsed::new(recorded_at, recent, pivot);
+
+        assert_eq!(fixture.split, Duration::from_secs(10));
+    }
 }
