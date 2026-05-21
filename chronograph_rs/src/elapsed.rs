@@ -1,18 +1,19 @@
+
 use std::time::{Instant,Duration};
 
 #[derive(Debug,Clone)]
 pub struct Elapsed {
-	pivot:Instant,
+	recorded_at:Instant,
 	split:Duration,
 	lap:Duration,
 }
 
 impl Elapsed {
-	pub fn new(current:Instant,recent:Instant,pivot:Instant) -> Self {
+	pub fn new(recorded_at:Instant,recent:Instant,pivot:Instant) -> Self {
 		todo!()
 	}
 	
-	pub fn pivot(&self)->Instant {
+	pub fn recorded_at(&self) ->Instant {
 		todo!()
 	}
 	
@@ -34,18 +35,18 @@ mod tests {
 	
 	#[test]
 	fn new() {
-		let piv=Instant::now();
-		let lap=piv.add(Duration::from_secs(1));
-		let split=piv.add(Duration::from_secs(2));
+		let recorded_at =Instant::now();
+		let lap= recorded_at.add(Duration::from_secs(1));
+		let split= recorded_at.add(Duration::from_secs(2));
 		
-		let fixture=Elapsed::new(piv,lap,split);
+		let fixture=Elapsed::new(recorded_at, lap, split);
 		
-		assert_eq!(fixture.pivot(),piv);
-		assert_eq!(fixture.lap(),lap-piv);
-		assert_eq!(fixture.split(),split-piv);
+		assert_eq!(fixture.recorded_at, recorded_at);
+		assert_eq!(fixture.lap(),lap- recorded_at);
+		assert_eq!(fixture.split(),split- recorded_at);
 		
-		let zero=Elapsed::new(piv,piv,piv);
-		assert_eq!(zero.pivot(),piv);
+		let zero=Elapsed::new(recorded_at, recorded_at, recorded_at);
+		assert_eq!(zero.recorded_at(), recorded_at);
 		assert_eq!(zero.lap(),Duration::default());
 		assert_eq!(zero.split(),Duration::default());
 	}
