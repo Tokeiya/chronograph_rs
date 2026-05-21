@@ -9,39 +9,44 @@ pub struct Elapsed {
 
 impl Elapsed {
     pub fn new(recorded_at: Instant, recent: Instant, pivot: Instant) -> Self {
-        todo!()
+        debug_assert!(recorded_at >= recent, "recent must be after recorded_at");
+        debug_assert!(recent >= pivot, "pivot must be after recent");
+        Self {
+            recorded_at,
+            split: recorded_at - pivot,
+            lap: recorded_at - recent,
+        }
     }
 
     pub fn recorded_at(&self) -> &Instant {
-        todo!()
+        &self.recorded_at
     }
 
     pub fn lap(&self) -> &Duration {
-        todo!()
+        &self.lap
     }
 
     pub fn split(&self) -> &Duration {
-        todo!()
+        &self.split
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::ops::Add;
-    use std::panic::catch_unwind;
+    use std::ops::Sub;
 
     #[test]
     fn new() {
         let recorded_at = Instant::now();
-        let lap = recorded_at.add(Duration::from_secs(1));
-        let split = recorded_at.add(Duration::from_secs(2));
+        let lap = recorded_at.sub(Duration::from_secs(1));
+        let split = recorded_at.sub(Duration::from_secs(2));
 
         let fixture = Elapsed::new(recorded_at, lap, split);
 
         assert_eq!(fixture.recorded_at, recorded_at);
-        assert_eq!(fixture.lap, lap - recorded_at);
-        assert_eq!(fixture.split, split - recorded_at);
+        assert_eq!(fixture.lap, Duration::from_secs(1));
+        assert_eq!(fixture.split, Duration::from_secs(2));
 
         let zero = Elapsed::new(recorded_at, recorded_at, recorded_at);
         assert_eq!(zero.recorded_at, recorded_at);
@@ -87,7 +92,7 @@ mod tests {
 
         let fixture = Elapsed::new(recorded_at, recent, pivot);
 
-        assert_eq!(fixture.recorded_at, recorded_at);
+        assert_eq!(fixture.recorded_at(), &recorded_at);
     }
 
     #[test]
@@ -98,7 +103,7 @@ mod tests {
 
         let fixture = Elapsed::new(recorded_at, recent, pivot);
 
-        assert_eq!(fixture.lap, Duration::from_secs(1));
+        assert_eq!(fixture.lap(), &Duration::from_secs(1));
     }
 
     #[test]
@@ -109,6 +114,6 @@ mod tests {
 
         let fixture = Elapsed::new(recorded_at, recent, pivot);
 
-        assert_eq!(fixture.split, Duration::from_secs(10));
+        assert_eq!(fixture.split(), &Duration::from_secs(10));
     }
 }
