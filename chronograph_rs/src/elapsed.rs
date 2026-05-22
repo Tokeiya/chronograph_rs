@@ -9,8 +9,11 @@ pub struct Elapsed {
 
 impl Elapsed {
     pub fn new(recorded_at: Instant, recent: Instant, pivot: Instant) -> Self {
-        debug_assert!(recorded_at >= recent, "recent must be after recorded_at");
-        debug_assert!(recent >= pivot, "pivot must be after recent");
+        debug_assert!(
+            recorded_at >= recent,
+            "recorded_at must be after or equal to recent"
+        );
+        debug_assert!(recent >= pivot, "recent must be after or equal to pivot");
         Self {
             recorded_at,
             split: recorded_at - pivot,
@@ -18,16 +21,16 @@ impl Elapsed {
         }
     }
 
-    pub fn recorded_at(&self) -> &Instant {
-        &self.recorded_at
+    pub fn recorded_at(&self) -> Instant {
+        self.recorded_at
     }
 
-    pub fn lap(&self) -> &Duration {
-        &self.lap
+    pub fn lap(&self) -> Duration {
+        self.lap
     }
 
-    pub fn split(&self) -> &Duration {
-        &self.split
+    pub fn split(&self) -> Duration {
+        self.split
     }
 }
 
@@ -92,7 +95,7 @@ mod tests {
 
         let fixture = Elapsed::new(recorded_at, recent, pivot);
 
-        assert_eq!(fixture.recorded_at(), &recorded_at);
+        assert_eq!(fixture.recorded_at(), recorded_at);
     }
 
     #[test]
@@ -103,7 +106,7 @@ mod tests {
 
         let fixture = Elapsed::new(recorded_at, recent, pivot);
 
-        assert_eq!(fixture.lap(), &Duration::from_secs(1));
+        assert_eq!(fixture.lap(), Duration::from_secs(1));
     }
 
     #[test]
@@ -114,6 +117,6 @@ mod tests {
 
         let fixture = Elapsed::new(recorded_at, recent, pivot);
 
-        assert_eq!(fixture.split(), &Duration::from_secs(10));
+        assert_eq!(fixture.split(), Duration::from_secs(10));
     }
 }
