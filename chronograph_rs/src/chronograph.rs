@@ -11,6 +11,7 @@ use super::now::now;
 
 pub struct Chronograph {
 	pivot: Instant,
+	recent: Instant,
 	accum: Duration,
 	state: State,
 	memory: Vec<Elapsed>,
@@ -20,6 +21,7 @@ impl Default for Chronograph {
 	fn default() -> Self {
 		Chronograph {
 			pivot: now(),
+			recent: now(),
 			accum: Duration::new(0, 0),
 			state: State::Ready,
 			memory: Vec::new(),
@@ -55,6 +57,7 @@ impl Chronograph {
 		};
 
 		self.pivot = now();
+		self.recent = self.pivot;
 		self.state = State::Running;
 		Ok(self.accum)
 	}
@@ -76,11 +79,8 @@ impl Chronograph {
 		let current = now();
 		let split = current - self.pivot;
 
-		let lap = if self.memory.is_empty() {
-			split
-		} else {
-			split - self.memory.last().unwrap().split()
-		};
+		let lap = current - self.recent;
+		self.recent = current;
 
 		let elapsed = Elapsed::new(lap, split);
 		self.memory.push(elapsed);
