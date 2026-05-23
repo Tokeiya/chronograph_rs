@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use std::fmt::Formatter;
 
+#[derive(Clone, Copy)]
 pub struct Elapsed<T> {
 	split: T,
 	lap: T,

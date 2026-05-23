@@ -1,13 +1,15 @@
-pub mod duration_elapsed;
-pub mod error;
-pub mod instant_chronograph;
-pub(crate) mod now;
-pub mod state;
+mod chronograph;
+mod elapsed;
+mod error;
+mod moment;
+mod pendulum;
+mod state;
+mod time_span;
 
-pub(crate) mod test_now;
-
-pub mod chronograph;
-pub mod elapsed;
-pub mod moment;
-pub mod pendulum;
-pub mod time_span;
+pub use chronograph::Chronograph;
+pub use elapsed::Elapsed;
+pub use error::{Error, Result};
+pub use moment::Moment;
+pub use pendulum::Pendulum;
+pub use state::State;
+pub use time_span::TimeSpan;

@@ -75,22 +75,27 @@ where
 		if self.state != State::Running {
 			Err(Error::NotRunning)
 		} else {
-			self.accum += current - self.recent;
+			self.accum += current - self.pivot;
 			self.state = State::Stopped;
 			Ok(self.accum)
 		}
 	}
 
 	pub fn lap(&mut self) -> Result<(usize, Elapsed<T>)> {
+		let current = self.pendulum.measurement();
+
 		if self.state != State::Running {
 			Err(Error::NotRunning)
 		} else {
-			let current = self.pendulum.measurement();
-			let split = current - self.pivot;
+			let mut split = current - self.pivot;
+			split += self.accum;
+
 			let lap = current - self.recent;
 			self.recent = current;
-			self.memory.push(Elapsed::new(split, lap));
-			Ok((self.memory.len(), Elapsed::new(split, lap)))
+
+			let elapsed = Elapsed::new(split, lap);
+			self.memory.push(elapsed);
+			Ok((self.memory.len(), elapsed))
 		}
 	}
 
@@ -126,8 +131,7 @@ where
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use mockall::predicate::*;
-	use mockall::{Sequence, automock, mock};
+	use mockall::{Sequence, mock};
 	use std::fmt::Debug;
 
 	impl TimeSpan for usize {
@@ -403,5 +407,34 @@ mod tests {
 		let (c, e) = fixture.lap().unwrap();
 		assert_eq!(c, 3);
 		assert_elapsed(&e, 25, 3);
+	}
+
+	#[test]
+	fn stop_after_lap_counts_whole_running_segment() {
+		let mut mock = MockDummy::new();
+		let mut seq = Sequence::new();
+
+		mock.expect_measurement()
+			.once()
+			.in_sequence(&mut seq)
+			.return_const(0usize); // new
+		mock.expect_measurement()
+			.once()
+			.in_sequence(&mut seq)
+			.return_const(0usize); // start
+		mock.expect_measurement()
+			.once()
+			.in_sequence(&mut seq)
+			.return_const(10usize); // lap
+		mock.expect_measurement()
+			.once()
+			.in_sequence(&mut seq)
+			.return_const(15usize); // stop
+
+		let mut fixture = Chronograph::new(mock);
+		fixture.start().unwrap();
+		fixture.lap().unwrap();
+
+		assert_eq!(fixture.stop().unwrap(), 15);
 	}
 }
