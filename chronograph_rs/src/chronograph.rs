@@ -5,20 +5,21 @@ use crate::elapsed::Elapsed;
 use crate::moment::Moment;
 use crate::state::State;
 
-pub struct Chronograph<M, T, P> {
+type MomentOf<P> = <P as Pendulum>::Mmnt;
+type SpanOf<P> = <<P as Pendulum>::Mmnt as Moment>::Span;
+
+pub struct Chronograph<P: Pendulum> {
 	pendulum: P,
-	pivot: M,
-	recent: M,
-	accum: T,
+	pivot: MomentOf<P>,
+	recent: MomentOf<P>,
+	accum: SpanOf<P>,
 	state: State,
-	memory: Vec<Elapsed<T>>,
+	memory: Vec<Elapsed<SpanOf<P>>>,
 }
 
-impl<M, T, P> Chronograph<M, T, P>
+impl<P> Chronograph<P>
 where
-	T: TimeSpan,
-	M: Moment<Span = T>,
-	P: Pendulum<Mmnt = M>,
+	P: Pendulum,
 {
 	pub fn new(mut pendulum: P) -> Self {
 		let tmp = pendulum.measurement();
@@ -27,7 +28,7 @@ where
 			pendulum,
 			pivot: tmp,
 			recent: tmp,
-			accum: T::zero(),
+			accum: SpanOf::<P>::zero(),
 			state: State::Ready,
 			memory: Vec::new(),
 		}
@@ -38,10 +39,10 @@ where
 	}
 
 	//noinspection DuplicatedCode
-	pub fn restart(&mut self) -> T {
+	pub fn restart(&mut self) -> SpanOf<P> {
 		let current = self.pendulum.measurement();
 		let ret = match self.state {
-			State::Ready => T::zero(),
+			State::Ready => SpanOf::<P>::zero(),
 			State::Running => {
 				self.accum += current - self.pivot;
 				self.accum
@@ -53,12 +54,12 @@ where
 		self.state = State::Running;
 		self.pivot = current;
 		self.recent = current;
-		self.accum = T::zero();
+		self.accum = SpanOf::<P>::zero();
 
 		ret
 	}
 
-	pub fn start(&mut self) -> Result<T> {
+	pub fn start(&mut self) -> Result<SpanOf<P>> {
 		let current = self.pendulum.measurement();
 		if self.state == State::Running {
 			Err(Error::AlreadyRunning)
@@ -70,7 +71,7 @@ where
 		}
 	}
 
-	pub fn stop(&mut self) -> Result<T> {
+	pub fn stop(&mut self) -> Result<SpanOf<P>> {
 		let current = self.pendulum.measurement();
 		if self.state != State::Running {
 			Err(Error::NotRunning)
@@ -81,7 +82,7 @@ where
 		}
 	}
 
-	pub fn lap(&mut self) -> Result<(usize, Elapsed<T>)> {
+	pub fn lap(&mut self) -> Result<(usize, Elapsed<SpanOf<P>>)> {
 		let current = self.pendulum.measurement();
 
 		if self.state != State::Running {
@@ -100,11 +101,11 @@ where
 	}
 
 	//noinspection DuplicatedCode
-	pub fn reset(&mut self) -> T {
+	pub fn reset(&mut self) -> SpanOf<P> {
 		let current = self.pendulum.measurement();
 
 		let ret = match self.state {
-			State::Ready => T::zero(),
+			State::Ready => SpanOf::<P>::zero(),
 			State::Running => {
 				self.accum += current - self.pivot;
 				self.accum
@@ -112,18 +113,18 @@ where
 			State::Stopped => self.accum,
 		};
 
-		self.accum = T::zero();
+		self.accum = SpanOf::<P>::zero();
 		self.state = State::Ready;
 		ret
 	}
 
-	pub fn clear(&mut self) -> (Vec<Elapsed<T>>, T) {
+	pub fn clear(&mut self) -> (Vec<Elapsed<SpanOf<P>>>, SpanOf<P>) {
 		let ret = self.reset();
 		let mem = std::mem::take(&mut self.memory);
 		(mem, ret)
 	}
 
-	pub fn memory(&self) -> &[Elapsed<T>] {
+	pub fn memory(&self) -> &[Elapsed<SpanOf<P>>] {
 		&self.memory
 	}
 }
@@ -436,5 +437,41 @@ mod tests {
 		fixture.lap().unwrap();
 
 		assert_eq!(fixture.stop().unwrap(), 15);
+	}
+
+	#[test]
+	fn lap_after_resume_includes_accumulated_elapsed() {
+		let mut mock = MockDummy::new();
+		let mut seq = Sequence::new();
+
+		mock.expect_measurement()
+			.once()
+			.in_sequence(&mut seq)
+			.return_const(0usize); // new
+		mock.expect_measurement()
+			.once()
+			.in_sequence(&mut seq)
+			.return_const(0usize); // start
+		mock.expect_measurement()
+			.once()
+			.in_sequence(&mut seq)
+			.return_const(10usize); // stop
+		mock.expect_measurement()
+			.once()
+			.in_sequence(&mut seq)
+			.return_const(20usize); // start/resume
+		mock.expect_measurement()
+			.once()
+			.in_sequence(&mut seq)
+			.return_const(25usize); // lap
+
+		let mut fixture = Chronograph::new(mock);
+		fixture.start().unwrap();
+		fixture.stop().unwrap();
+		fixture.start().unwrap();
+
+		let (_, elapsed) = fixture.lap().unwrap();
+
+		assert_elapsed(&elapsed, 15, 5);
 	}
 }

@@ -10,6 +10,6 @@ pub use chronograph::Chronograph;
 pub use elapsed::Elapsed;
 pub use error::{Error, Result};
 pub use moment::Moment;
-pub use pendulum::Pendulum;
+pub use pendulum::{InstantPendulum, Pendulum};
 pub use state::State;
 pub use time_span::TimeSpan;
