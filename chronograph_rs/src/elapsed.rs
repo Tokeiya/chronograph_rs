@@ -1,57 +1,78 @@
-use std::time::{Duration, Instant};
+use super::time_span::TimeSpan;
+use std::fmt::Debug;
+use std::fmt::Formatter;
 
-#[derive(Debug, Clone)]
-pub struct Elapsed {
-	split: Duration,
-	lap: Duration,
+pub struct Elapsed<T> {
+	split: T,
+	lap: T,
 }
 
-impl Elapsed {
-	pub fn new(lap: Duration, split: Duration) -> Self {
-		debug_assert!(lap <= split, "lap must be less than or equal to split");
-		Self { lap, split }
+impl<T> Elapsed<T> {
+	pub fn new(split: T, lap: T) -> Self {
+		Self { split, lap }
+	}
+}
+
+impl<T: TimeSpan> Elapsed<T> {
+	pub fn split(&self) -> T {
+		self.split
 	}
 
-	pub fn lap(&self) -> Duration {
+	pub fn lap(&self) -> T {
 		self.lap
 	}
+}
 
-	pub fn split(&self) -> Duration {
-		self.split
+impl<T: Debug> Debug for Elapsed<T> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+		write!(
+			f,
+			"Elapsed {{ split: {:?}, lap: {:?} }}",
+			self.split, self.lap
+		)
 	}
 }
 
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use std::ops::Sub;
+	use std::time::Duration;
+	type Target = Elapsed<Duration>;
 
 	#[test]
 	fn new() {
-		let fixture = Elapsed::new(Duration::from_secs(1), Duration::from_secs(10));
-		assert_eq!(fixture.lap, Duration::from_secs(1));
-		assert_eq!(fixture.split, Duration::from_secs(10));
-
-		let fixture = Elapsed::new(Duration::from_secs(0), Duration::from_secs(0));
-		assert_eq!(fixture.lap, Duration::from_secs(0));
-		assert_eq!(fixture.split, Duration::from_secs(0));
-	}
-
-	#[test]
-	#[should_panic]
-	fn invalid_recent_new() {
-		_ = Elapsed::new(Duration::from_secs(10), Duration::from_secs(1));
-	}
-
-	#[test]
-	fn lap() {
-		let fixture = Elapsed::new(Duration::from_secs(1), Duration::from_secs(10));
-		assert_eq!(fixture.lap(), Duration::from_secs(1));
+		for s in (10..20).map(|i| Duration::from_secs(i)) {
+			for l in (0..10).map(|i| Duration::from_secs(i)) {
+				let fixture = Elapsed::new(s, l);
+				assert_eq!(fixture.split, s);
+				assert_eq!(fixture.lap, l);
+			}
+		}
 	}
 
 	#[test]
 	fn split() {
-		let fixture = Elapsed::new(Duration::from_secs(1), Duration::from_secs(10));
-		assert_eq!(fixture.split(), Duration::from_secs(10));
+		for s in (10..20).map(|i| Duration::from_secs(i)) {
+			for l in (0..10).map(|i| Duration::from_secs(i)) {
+				let fixture = Elapsed::new(s, l);
+				assert_eq!(fixture.split(), s);
+			}
+		}
+	}
+
+	#[test]
+	fn lap() {
+		for s in (10..20).map(|i| Duration::from_secs(i)) {
+			for l in (0..10).map(|i| Duration::from_secs(i)) {
+				let fixture = Elapsed::new(s, l);
+				assert_eq!(fixture.lap(), l);
+			}
+		}
+	}
+
+	#[test]
+	fn debug() {
+		let fixture = Target::new(Duration::from_secs(10), Duration::from_secs(5));
+		assert_eq!(format!("{:?}", fixture), "Elapsed { split: 10s, lap: 5s }");
 	}
 }
