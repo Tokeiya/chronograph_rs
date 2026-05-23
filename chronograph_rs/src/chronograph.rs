@@ -27,7 +27,7 @@ where
 			pendulum,
 			pivot: tmp,
 			recent: tmp,
-			accum: T::default(),
+			accum: T::zero(),
 			state: State::Ready,
 			memory: Vec::new(),
 		}
@@ -37,28 +37,85 @@ where
 		self.state
 	}
 
+	//noinspection DuplicatedCode
 	pub fn restart(&mut self) -> T {
-		todo!()
+		let current = self.pendulum.measurement();
+		let ret = match self.state {
+			State::Ready => T::zero(),
+			State::Running => {
+				self.accum += current - self.pivot;
+				self.accum
+			}
+			State::Stopped => self.accum,
+		};
+
+		let current = self.pendulum.measurement();
+		self.state = State::Running;
+		self.pivot = current;
+		self.recent = current;
+		self.accum = T::zero();
+
+		ret
 	}
 
 	pub fn start(&mut self) -> Result<T> {
-		todo!()
+		let current = self.pendulum.measurement();
+		if self.state == State::Running {
+			Err(Error::AlreadyRunning)
+		} else {
+			self.pivot = current;
+			self.recent = current;
+			self.state = State::Running;
+			Ok(self.accum)
+		}
 	}
 
 	pub fn stop(&mut self) -> Result<T> {
-		todo!()
+		let current = self.pendulum.measurement();
+		if self.state != State::Running {
+			Err(Error::NotRunning)
+		} else {
+			self.accum += current - self.recent;
+			self.state = State::Stopped;
+			Ok(self.accum)
+		}
 	}
 
 	pub fn lap(&mut self) -> Result<(usize, Elapsed<T>)> {
-		todo!()
+		if self.state != State::Running {
+			Err(Error::NotRunning)
+		} else {
+			let current = self.pendulum.measurement();
+			let split = current - self.pivot;
+			let lap = current - self.recent;
+			self.recent = current;
+			self.memory.push(Elapsed::new(split, lap));
+			Ok((self.memory.len(), Elapsed::new(split, lap)))
+		}
 	}
 
+	//noinspection DuplicatedCode
 	pub fn reset(&mut self) -> T {
-		todo!()
+		let current = self.pendulum.measurement();
+
+		let ret = match self.state {
+			State::Ready => T::zero(),
+			State::Running => {
+				self.accum += current - self.pivot;
+				self.accum
+			}
+			State::Stopped => self.accum,
+		};
+
+		self.accum = T::zero();
+		self.state = State::Ready;
+		ret
 	}
 
 	pub fn clear(&mut self) -> (Vec<Elapsed<T>>, T) {
-		todo!()
+		let ret = self.reset();
+		let mem = std::mem::take(&mut self.memory);
+		(mem, ret)
 	}
 
 	pub fn memory(&self) -> &[Elapsed<T>] {
@@ -69,11 +126,15 @@ where
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use mockall::mock;
 	use mockall::predicate::*;
+	use mockall::{Sequence, automock, mock};
 	use std::fmt::Debug;
 
-	impl TimeSpan for usize {}
+	impl TimeSpan for usize {
+		fn zero() -> Self {
+			0
+		}
+	}
 	impl Moment for usize {
 		type Span = usize;
 	}
@@ -139,6 +200,7 @@ mod tests {
 
 		mock.expect_measurement().returning(move || {
 			let ret = cnt;
+			println!("Payout:{ret}");
 			cnt += 1;
 			ret
 		});
@@ -164,7 +226,7 @@ mod tests {
 		assert_eq!(fixture.state, State::Running);
 
 		_ = fixture.stop().unwrap();
-		assert!(matches!(fixture.start(), Ok(x) if x == 1));
+		assert!(matches!(fixture.start(), Ok(x) if x == 2));
 	}
 
 	#[test]
@@ -188,6 +250,7 @@ mod tests {
 	#[test]
 	fn lap() {
 		let mut fixture = Chronograph::new(gen_mock());
+		assert!(fixture.lap().is_err());
 		_ = fixture.start().unwrap();
 
 		for i in 1..=10 {
@@ -211,14 +274,16 @@ mod tests {
 	fn clear() {
 		let mut fixture = Chronograph::new(gen_mock());
 		_ = fixture.start().unwrap();
+		dbg!("splitter");
 
 		for _ in 0..10 {
 			_ = fixture.lap().unwrap();
 		}
+		dbg!("splitter");
 
 		let (mem, ttl) = fixture.clear();
 		assert_eq!(mem.len(), 10);
-		assert_eq!(ttl, 10);
+		assert_eq!(ttl, 11);
 
 		for (idx, ela) in mem.iter().enumerate() {
 			assert_elapsed(ela, idx + 1, 1);
@@ -246,15 +311,27 @@ mod tests {
 		let mut seq = mockall::Sequence::new();
 
 		mock.expect_measurement()
+			.once()
+			.in_sequence(&mut seq)
+			.return_const(0usize);
+
+		mock.expect_measurement()
+			.once()
 			.in_sequence(&mut seq)
 			.return_const(1usize);
+
 		mock.expect_measurement()
+			.once()
 			.in_sequence(&mut seq)
 			.return_const(5usize);
+
 		mock.expect_measurement()
+			.once()
 			.in_sequence(&mut seq)
 			.return_const(42usize);
+
 		mock.expect_measurement()
+			.once()
 			.in_sequence(&mut seq)
 			.return_const(45usize);
 
@@ -263,5 +340,68 @@ mod tests {
 		assert_eq!(fixture.stop().unwrap(), 4);
 		assert_eq!(fixture.start().unwrap(), 4);
 		assert_eq!(fixture.stop().unwrap(), 7);
+	}
+
+	#[test]
+	fn lap_complex() {
+		fn f(i: usize) -> usize {
+			println!("called:{}", i);
+			i
+		}
+
+		let mut mock = MockDummy::new();
+		let mut seq = Sequence::new();
+
+		mock.expect_measurement()
+			.once()
+			.in_sequence(&mut seq)
+			.returning(|| f(0));
+
+		mock.expect_measurement()
+			.once()
+			.in_sequence(&mut seq)
+			.returning(|| f(5));
+
+		mock.expect_measurement()
+			.once()
+			.in_sequence(&mut seq)
+			.returning(|| f(42));
+
+		mock.expect_measurement()
+			.once()
+			.in_sequence(&mut seq)
+			.returning(|| f(48));
+
+		mock.expect_measurement()
+			.once()
+			.in_sequence(&mut seq)
+			.returning(|| f(65));
+
+		mock.expect_measurement()
+			.once()
+			.in_sequence(&mut seq)
+			.returning(|| f(87));
+
+		mock.expect_measurement()
+			.once()
+			.in_sequence(&mut seq)
+			.returning(|| f(90));
+
+		let mut fixture = Chronograph::new(mock);
+		_ = fixture.start().unwrap();
+		let (c, e) = fixture.lap().unwrap();
+		assert_eq!(c, 1);
+		assert_elapsed(&e, 37, 37);
+
+		let c = fixture.restart();
+		assert_eq!(c, 43);
+
+		let (c, e) = fixture.lap().unwrap();
+		assert_eq!(c, 2);
+		assert_elapsed(&e, 22, 22);
+
+		let (c, e) = fixture.lap().unwrap();
+		assert_eq!(c, 3);
+		assert_elapsed(&e, 25, 3);
 	}
 }
