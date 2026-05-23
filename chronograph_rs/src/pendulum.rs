@@ -1,15 +1,18 @@
+#![allow(clippy::disallowed_methods)]
+
 use super::moment::Moment;
+use std::time::Instant;
 
 pub trait Pendulum {
-	type M: Moment;
-	fn measurement(&mut self) -> Self::M;
+	type Mmnt: Moment;
+	fn measurement(&mut self) -> Self::Mmnt;
 }
 
 pub struct InstantPendulum;
 
 impl Pendulum for InstantPendulum {
-	fn measurement(&mut self) -> <Self as Pendulum>::M {
-		std::time::Instant::now()
+	type Mmnt = Instant;
+	fn measurement(&mut self) -> <Self as Pendulum>::Mmnt {
+		Instant::now()
 	}
-	type M = std::time::Instant;
 }
