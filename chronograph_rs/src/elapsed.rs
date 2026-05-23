@@ -1,4 +1,3 @@
-use super::time_span::TimeSpan;
 use std::fmt::Debug;
 use std::fmt::Formatter;
 
@@ -13,7 +12,7 @@ impl<T> Elapsed<T> {
 	}
 }
 
-impl<T: TimeSpan> Elapsed<T> {
+impl<T: Copy> Elapsed<T> {
 	pub fn split(&self) -> T {
 		self.split
 	}

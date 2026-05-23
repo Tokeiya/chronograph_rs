@@ -119,7 +119,6 @@ impl Chronograph {
 mod tests {
 	use super::*;
 	use crate::test_now;
-	use crate::test_now::*;
 
 	fn assert(actual: &Elapsed, lap: Duration, split: Duration) {
 		assert_eq!(actual.lap(), lap, "lap: {:?}", actual.lap());

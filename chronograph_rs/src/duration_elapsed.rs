@@ -1,4 +1,4 @@
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct Elapsed {
@@ -24,7 +24,6 @@ impl Elapsed {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use std::ops::Sub;
 
 	#[test]
 	fn new() {

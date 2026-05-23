@@ -5,9 +5,9 @@ pub trait Pendulum {
 	fn measurement(&mut self) -> Self::M;
 }
 
-pub struct InstantPenduram;
+pub struct InstantPendulum;
 
-impl Pendulum for InstantPenduram {
+impl Pendulum for InstantPendulum {
 	fn measurement(&mut self) -> <Self as Pendulum>::M {
 		std::time::Instant::now()
 	}
