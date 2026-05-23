@@ -1,3 +1,5 @@
-use std::ops::{Add, Sub};
+use std::time::Duration;
 
-pub trait TimeSpan: Sub + Add + Sized {}
+pub trait TimeSpan: Default + Sized + Clone + Copy {}
+
+impl TimeSpan for Duration {}

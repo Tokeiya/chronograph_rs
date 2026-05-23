@@ -1,5 +1,9 @@
-use super::moment::Moment;
-
-pub trait Pendulum<T, U> {
-    fn measurement(&self);
-}
+// use super::moment::Moment;
+// use super::time_span::TimeSpan;
+//
+// pub trait Pendulum
+// {
+// 	fn measurement(&self) -> T;
+// }
+//
+// pub struct InstantPenduram;
