@@ -1,6 +1,7 @@
 use super::error::{Error, Result};
 use super::measurement::pendulum::Pendulum;
 use super::measurement::time_span::TimeSpan;
+use super::memory::lap_memory::Memory;
 use crate::measurement::elapsed::Elapsed;
 use crate::measurement::moment::Moment;
 use crate::state::State;
@@ -8,18 +9,19 @@ use crate::state::State;
 type MomentOf<P> = <P as Pendulum>::Mmnt;
 type SpanOf<P> = <<P as Pendulum>::Mmnt as Moment>::Span;
 
-pub struct Chronograph<P: Pendulum> {
+pub struct Chronograph<P: Pendulum, M: Memory<SpanOf<P>>> {
 	pendulum: P,
 	pivot: MomentOf<P>,
 	recent: MomentOf<P>,
 	accum: SpanOf<P>,
 	state: State,
-	memory: Vec<Elapsed<SpanOf<P>>>,
+	memory: M,
 }
 
-impl<P> Chronograph<P>
+impl<P, M> Chronograph<P, M>
 where
 	P: Pendulum,
+	M: Memory<SpanOf<P>>,
 {
 	pub fn new(mut pendulum: P) -> Self {
 		let tmp = pendulum.measurement();
@@ -30,7 +32,7 @@ where
 			recent: tmp,
 			accum: SpanOf::<P>::zero(),
 			state: State::Ready,
-			memory: Vec::new(),
+			memory: M::default(),
 		}
 	}
 
@@ -114,13 +116,13 @@ where
 		ret
 	}
 
-	pub fn clear(&mut self) -> (Vec<Elapsed<SpanOf<P>>>, SpanOf<P>) {
+	pub fn clear(&mut self) -> (M, SpanOf<P>) {
 		let ret = self.reset();
 		let mem = std::mem::take(&mut self.memory);
 		(mem, ret)
 	}
 
-	pub fn memory(&self) -> &[Elapsed<SpanOf<P>>] {
+	pub fn memory(&self) -> &M {
 		&self.memory
 	}
 }
@@ -150,12 +152,14 @@ mod tests {
 
 	}
 
+	type Fixture = Chronograph<MockDummy, Vec<Elapsed<usize>>>;
+
 	#[test]
 	fn new() {
 		let mut mock = MockDummy::new();
 		mock.expect_measurement().times(1).returning(|| 42);
 
-		let fixture = Chronograph::new(mock);
+		let fixture = Fixture::new(mock);
 		assert_eq!(fixture.state, State::Ready);
 		assert_eq!(fixture.pivot, 42);
 		assert_eq!(fixture.recent, 42);
@@ -167,7 +171,7 @@ mod tests {
 	fn state() {
 		let mut mock = MockDummy::new();
 		mock.expect_measurement().return_const(42usize);
-		let mut fixture = Chronograph::new(mock);
+		let mut fixture = Fixture::new(mock);
 		assert_eq!(fixture.state(), State::Ready);
 
 		fixture.start().unwrap();
@@ -211,7 +215,7 @@ mod tests {
 
 	#[test]
 	fn restart() {
-		let mut fixture = Chronograph::new(gen_mock());
+		let mut fixture = Fixture::new(gen_mock());
 		assert_eq!(fixture.restart(), 0);
 		assert_eq!(fixture.state, State::Running);
 		assert_eq!(fixture.restart(), 1);
@@ -220,7 +224,7 @@ mod tests {
 
 	#[test]
 	fn start() {
-		let mut fixture = Chronograph::new(gen_mock());
+		let mut fixture = Fixture::new(gen_mock());
 		assert!(matches!(fixture.start(), Ok(x) if x == 0));
 		assert_eq!(fixture.state, State::Running);
 		assert!(matches!(fixture.start(), Err(Error::AlreadyRunning)));
@@ -232,7 +236,7 @@ mod tests {
 
 	#[test]
 	fn stop() {
-		let mut fixture = Chronograph::new(gen_mock());
+		let mut fixture = Fixture::new(gen_mock());
 		_ = fixture.start().unwrap();
 		assert!(matches!(fixture.stop(), Ok(x) if x == 1));
 		assert_eq!(fixture.state, State::Stopped);
@@ -250,7 +254,7 @@ mod tests {
 
 	#[test]
 	fn lap() {
-		let mut fixture = Chronograph::new(gen_mock());
+		let mut fixture = Fixture::new(gen_mock());
 		assert!(fixture.lap().is_err());
 		_ = fixture.start().unwrap();
 
@@ -265,7 +269,7 @@ mod tests {
 
 	#[test]
 	fn reset() {
-		let mut fixture = Chronograph::new(gen_mock());
+		let mut fixture = Fixture::new(gen_mock());
 		_ = fixture.start().unwrap();
 		assert_eq!(fixture.reset(), 1);
 		assert_eq!(fixture.reset(), 0);
@@ -273,7 +277,7 @@ mod tests {
 
 	#[test]
 	fn clear() {
-		let mut fixture = Chronograph::new(gen_mock());
+		let mut fixture = Fixture::new(gen_mock());
 		_ = fixture.start().unwrap();
 		dbg!("splitter");
 
@@ -295,7 +299,7 @@ mod tests {
 
 	#[test]
 	fn memory() {
-		let mut fixture = Chronograph::new(gen_mock());
+		let mut fixture = Fixture::new(gen_mock());
 		_ = fixture.start().unwrap();
 
 		for i in 0..10 {
@@ -336,7 +340,7 @@ mod tests {
 			.in_sequence(&mut seq)
 			.return_const(45usize);
 
-		let mut fixture = Chronograph::new(mock);
+		let mut fixture = Fixture::new(mock);
 		_ = fixture.start().unwrap();
 		assert_eq!(fixture.stop().unwrap(), 4);
 		assert_eq!(fixture.start().unwrap(), 4);
@@ -388,7 +392,7 @@ mod tests {
 			.in_sequence(&mut seq)
 			.returning(|| f(90));
 
-		let mut fixture = Chronograph::new(mock);
+		let mut fixture = Fixture::new(mock);
 		_ = fixture.start().unwrap();
 		let (c, e) = fixture.lap().unwrap();
 		assert_eq!(c, 1);
@@ -428,7 +432,7 @@ mod tests {
 			.in_sequence(&mut seq)
 			.return_const(15usize); // stop
 
-		let mut fixture = Chronograph::new(mock);
+		let mut fixture = Fixture::new(mock);
 		fixture.start().unwrap();
 		fixture.lap().unwrap();
 
@@ -461,7 +465,7 @@ mod tests {
 			.in_sequence(&mut seq)
 			.return_const(25usize); // lap
 
-		let mut fixture = Chronograph::new(mock);
+		let mut fixture = Fixture::new(mock);
 		fixture.start().unwrap();
 		fixture.stop().unwrap();
 		fixture.start().unwrap();
