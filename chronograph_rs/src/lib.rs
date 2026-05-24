@@ -1,6 +1,7 @@
 mod chronograph;
 mod elapsed;
 mod error;
+mod lap_memory;
 mod moment;
 mod pendulum;
 mod state;
