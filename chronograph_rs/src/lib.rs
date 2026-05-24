@@ -1,16 +1,13 @@
 mod chronograph;
-mod elapsed;
 mod error;
-mod lap_memory;
-mod moment;
-mod pendulum;
+mod measurement;
+mod memory;
 mod state;
-mod time_span;
 
 pub use chronograph::Chronograph;
-pub use elapsed::Elapsed;
 pub use error::{Error, Result};
-pub use moment::Moment;
-pub use pendulum::{InstantPendulum, Pendulum};
+pub use measurement::elapsed::Elapsed;
+pub use measurement::moment::Moment;
+pub use measurement::pendulum::{InstantPendulum, Pendulum};
+pub use measurement::time_span::TimeSpan;
 pub use state::State;
-pub use time_span::TimeSpan;

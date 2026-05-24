@@ -1,4 +1,4 @@
-use crate::time_span::TimeSpan;
+use super::time_span::TimeSpan;
 use std::ops::Sub;
 use std::time::{Duration, Instant};
 

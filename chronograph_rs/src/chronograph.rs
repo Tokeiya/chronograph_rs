@@ -1,8 +1,8 @@
 use super::error::{Error, Result};
-use super::pendulum::Pendulum;
-use super::time_span::TimeSpan;
-use crate::elapsed::Elapsed;
-use crate::moment::Moment;
+use super::measurement::pendulum::Pendulum;
+use super::measurement::time_span::TimeSpan;
+use crate::measurement::elapsed::Elapsed;
+use crate::measurement::moment::Moment;
 use crate::state::State;
 
 type MomentOf<P> = <P as Pendulum>::Mmnt;
@@ -38,17 +38,20 @@ where
 		self.state
 	}
 
-	//noinspection DuplicatedCode
-	pub fn restart(&mut self) -> SpanOf<P> {
-		let current = self.pendulum.measurement();
-		let ret = match self.state {
+	fn calc_accum(&mut self, current: MomentOf<P>) -> SpanOf<P> {
+		match self.state {
 			State::Ready => SpanOf::<P>::zero(),
 			State::Running => {
 				self.accum += current - self.pivot;
 				self.accum
 			}
 			State::Stopped => self.accum,
-		};
+		}
+	}
+
+	pub fn restart(&mut self) -> SpanOf<P> {
+		let current = self.pendulum.measurement();
+		let ret = self.calc_accum(current);
 
 		let current = self.pendulum.measurement();
 		self.state = State::Running;
@@ -104,14 +107,7 @@ where
 	pub fn reset(&mut self) -> SpanOf<P> {
 		let current = self.pendulum.measurement();
 
-		let ret = match self.state {
-			State::Ready => SpanOf::<P>::zero(),
-			State::Running => {
-				self.accum += current - self.pivot;
-				self.accum
-			}
-			State::Stopped => self.accum,
-		};
+		let ret = self.calc_accum(current);
 
 		self.accum = SpanOf::<P>::zero();
 		self.state = State::Ready;
