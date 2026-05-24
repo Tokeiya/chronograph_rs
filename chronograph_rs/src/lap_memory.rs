@@ -1,9 +1,10 @@
 use super::elapsed::Elapsed;
 use super::time_span::TimeSpan;
 use std::ops::Index;
+use std::process::Output;
 use std::time::Duration;
 
-pub trait Memory<T: TimeSpan>: Index<usize> {
+pub trait Memory<T: TimeSpan>: Index<usize, Output = Elapsed<T>> {
 	type Iter<'a>: Iterator<Item = &'a Elapsed<T>>
 	where
 		Self: 'a,
@@ -11,7 +12,7 @@ pub trait Memory<T: TimeSpan>: Index<usize> {
 
 	fn iter(&self) -> Self::Iter<'_>;
 
-	fn input(&mut self, value: Elapsed<T>);
+	fn push(&mut self, value: Elapsed<T>);
 }
 
 impl<T: TimeSpan> Memory<T> for Vec<Elapsed<T>> {
@@ -25,7 +26,7 @@ impl<T: TimeSpan> Memory<T> for Vec<Elapsed<T>> {
 		self.as_slice().iter()
 	}
 
-	fn input(&mut self, value: Elapsed<T>) {
+	fn push(&mut self, value: Elapsed<T>) {
 		self.push(value);
 	}
 }
