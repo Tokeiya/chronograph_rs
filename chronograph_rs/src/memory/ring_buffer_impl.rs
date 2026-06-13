@@ -7,7 +7,7 @@ impl<const N: usize, T: TimeSpan, C: FixedIndexCoordinator<N>> Memory<T>
 	for Buffer<Elapsed<T>, C, N>
 {
 	type Iter<'a>
-		= overwrite_ring_buffer::Iter<'a, Elapsed<T>, C>
+		= Iter<'a, Elapsed<T>, C>
 	where
 		Self: 'a,
 		T: 'a;
