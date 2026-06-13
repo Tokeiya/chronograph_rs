@@ -19,6 +19,7 @@ name = "chronograph_rs"
 version = "0.3.0"
 dependencies = [
  "mockall",
+ "overwrite-ring-buffer",
  "thiserror",
 ]
 
@@ -67,6 +68,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "overwrite-ring-buffer"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04c1159f891a2ece739b4fd7ed40f4cc8176d644615a99bf960957006bf5ce1e"
+dependencies = [
+ "thiserror",
 ]
 
 [[package]]

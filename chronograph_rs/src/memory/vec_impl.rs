@@ -25,7 +25,6 @@ impl<T: TimeSpan> Memory<T> for Vec<Elapsed<T>> {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::measurement::time_span::TimeSpan;
 	type Fixture = Vec<Elapsed<usize>>;
 
 	#[test]

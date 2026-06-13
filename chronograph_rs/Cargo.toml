@@ -8,3 +8,4 @@ mockall = "*"
 
 [dependencies]
 thiserror = "*"
+overwrite-ring-buffer = "*"
