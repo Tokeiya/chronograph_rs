@@ -105,10 +105,8 @@ where
 		}
 	}
 
-	//noinspection DuplicatedCode
 	pub fn reset(&mut self) -> SpanOf<P> {
 		let current = self.pendulum.measurement();
-
 		let ret = self.calc_accum(current);
 
 		self.accum = SpanOf::<P>::zero();
