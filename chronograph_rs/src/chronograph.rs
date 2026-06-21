@@ -23,7 +23,7 @@ where
 	P: Pendulum,
 	M: Memory<SpanOf<P>>,
 {
-	pub fn new(mut pendulum: P) -> Self {
+	pub fn new(mut pendulum: P, memory: M) -> Self {
 		let tmp = pendulum.measurement();
 
 		Self {
@@ -32,7 +32,7 @@ where
 			recent: tmp,
 			accum: SpanOf::<P>::zero(),
 			state: State::Ready,
-			memory: M::default(),
+			memory,
 		}
 	}
 
@@ -106,18 +106,20 @@ where
 	}
 
 	pub fn reset(&mut self) -> SpanOf<P> {
-		let current = self.pendulum.measurement();
-		let ret = self.calc_accum(current);
-
-		self.accum = SpanOf::<P>::zero();
-		self.state = State::Ready;
-		ret
+		todo!()
+		// let current = self.pendulum.measurement();
+		// let ret = self.calc_accum(current);
+		//
+		// self.accum = SpanOf::<P>::zero();
+		// self.state = State::Ready;
+		// ret
 	}
 
 	pub fn clear(&mut self) -> (M, SpanOf<P>) {
-		let ret = self.reset();
-		let mem = std::mem::take(&mut self.memory);
-		(mem, ret)
+		todo!()
+		// let ret = self.reset();
+		// let mem = std::mem::take(&mut self.memory);
+		// (mem, ret)
 	}
 
 	pub fn memory(&self) -> &M {
@@ -150,14 +152,15 @@ mod tests {
 
 	}
 
-	type Fixture = Chronograph<MockDummy, Vec<Elapsed<usize>>>;
+	type Memory = Vec<Elapsed<usize>>;
+	type Fixture = Chronograph<MockDummy, Memory>;
 
 	#[test]
 	fn new() {
 		let mut mock = MockDummy::new();
 		mock.expect_measurement().times(1).returning(|| 42);
 
-		let fixture = Fixture::new(mock);
+		let fixture = Fixture::new(mock, Memory::default());
 		assert_eq!(fixture.state, State::Ready);
 		assert_eq!(fixture.pivot, 42);
 		assert_eq!(fixture.recent, 42);
@@ -169,7 +172,7 @@ mod tests {
 	fn state() {
 		let mut mock = MockDummy::new();
 		mock.expect_measurement().return_const(42usize);
-		let mut fixture = Fixture::new(mock);
+		let mut fixture = Fixture::new(mock, Memory::default());
 		assert_eq!(fixture.state(), State::Ready);
 
 		fixture.start().unwrap();
@@ -213,7 +216,7 @@ mod tests {
 
 	#[test]
 	fn restart() {
-		let mut fixture = Fixture::new(gen_mock());
+		let mut fixture = Fixture::new(gen_mock(), Memory::default());
 		assert_eq!(fixture.restart(), 0);
 		assert_eq!(fixture.state, State::Running);
 		assert_eq!(fixture.restart(), 1);
@@ -222,7 +225,7 @@ mod tests {
 
 	#[test]
 	fn start() {
-		let mut fixture = Fixture::new(gen_mock());
+		let mut fixture = Fixture::new(gen_mock(), Memory::default());
 		assert!(matches!(fixture.start(), Ok(x) if x == 0));
 		assert_eq!(fixture.state, State::Running);
 		assert!(matches!(fixture.start(), Err(Error::AlreadyRunning)));
@@ -234,7 +237,7 @@ mod tests {
 
 	#[test]
 	fn stop() {
-		let mut fixture = Fixture::new(gen_mock());
+		let mut fixture = Fixture::new(gen_mock(), Memory::default());
 		_ = fixture.start().unwrap();
 		assert!(matches!(fixture.stop(), Ok(x) if x == 1));
 		assert_eq!(fixture.state, State::Stopped);
@@ -252,7 +255,7 @@ mod tests {
 
 	#[test]
 	fn lap() {
-		let mut fixture = Fixture::new(gen_mock());
+		let mut fixture = Fixture::new(gen_mock(), Memory::default());
 		assert!(fixture.lap().is_err());
 		_ = fixture.start().unwrap();
 
@@ -267,7 +270,7 @@ mod tests {
 
 	#[test]
 	fn reset() {
-		let mut fixture = Fixture::new(gen_mock());
+		let mut fixture = Fixture::new(gen_mock(), Memory::default());
 		_ = fixture.start().unwrap();
 		assert_eq!(fixture.reset(), 1);
 		assert_eq!(fixture.reset(), 0);
@@ -275,7 +278,7 @@ mod tests {
 
 	#[test]
 	fn clear() {
-		let mut fixture = Fixture::new(gen_mock());
+		let mut fixture = Fixture::new(gen_mock(), Memory::default());
 		_ = fixture.start().unwrap();
 		dbg!("splitter");
 
@@ -297,7 +300,7 @@ mod tests {
 
 	#[test]
 	fn memory() {
-		let mut fixture = Fixture::new(gen_mock());
+		let mut fixture = Fixture::new(gen_mock(), Memory::default());
 		_ = fixture.start().unwrap();
 
 		for i in 0..10 {
@@ -338,7 +341,7 @@ mod tests {
 			.in_sequence(&mut seq)
 			.return_const(45usize);
 
-		let mut fixture = Fixture::new(mock);
+		let mut fixture = Fixture::new(mock, Memory::default());
 		_ = fixture.start().unwrap();
 		assert_eq!(fixture.stop().unwrap(), 4);
 		assert_eq!(fixture.start().unwrap(), 4);
@@ -390,7 +393,7 @@ mod tests {
 			.in_sequence(&mut seq)
 			.returning(|| f(90));
 
-		let mut fixture = Fixture::new(mock);
+		let mut fixture = Fixture::new(mock, Memory::default());
 		_ = fixture.start().unwrap();
 		let (c, e) = fixture.lap().unwrap();
 		assert_eq!(c, 1);
@@ -430,7 +433,7 @@ mod tests {
 			.in_sequence(&mut seq)
 			.return_const(15usize); // stop
 
-		let mut fixture = Fixture::new(mock);
+		let mut fixture = Fixture::new(mock, Memory::default());
 		fixture.start().unwrap();
 		fixture.lap().unwrap();
 
@@ -463,7 +466,7 @@ mod tests {
 			.in_sequence(&mut seq)
 			.return_const(25usize); // lap
 
-		let mut fixture = Fixture::new(mock);
+		let mut fixture = Fixture::new(mock, Memory::default());
 		fixture.start().unwrap();
 		fixture.stop().unwrap();
 		fixture.start().unwrap();

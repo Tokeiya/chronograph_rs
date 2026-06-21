@@ -23,4 +23,8 @@ impl<const N: usize, T: TimeSpan, C: FixedIndexCoordinator<N>> Memory<T>
 	fn len(&self) -> usize {
 		<Buffer<Elapsed<T>, C, N> as CircularBuffer<Elapsed<T>>>::len(self)
 	}
+
+	fn clear(&mut self) {
+		todo!()
+	}
 }

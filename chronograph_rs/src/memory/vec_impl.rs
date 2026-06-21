@@ -20,6 +20,10 @@ impl<T: TimeSpan> Memory<T> for Vec<Elapsed<T>> {
 	fn len(&self) -> usize {
 		self.len()
 	}
+
+	fn clear(&mut self) {
+		todo!()
+	}
 }
 
 #[cfg(test)]
