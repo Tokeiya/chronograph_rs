@@ -106,13 +106,12 @@ where
 	}
 
 	pub fn reset(&mut self) -> SpanOf<P> {
-		todo!()
-		// let current = self.pendulum.measurement();
-		// let ret = self.calc_accum(current);
-		//
-		// self.accum = SpanOf::<P>::zero();
-		// self.state = State::Ready;
-		// ret
+		let current = self.pendulum.measurement();
+		let ret = self.calc_accum(current);
+
+		self.accum = SpanOf::<P>::zero();
+		self.state = State::Ready;
+		ret
 	}
 
 	pub fn clear(&mut self) -> (M, SpanOf<P>) {
