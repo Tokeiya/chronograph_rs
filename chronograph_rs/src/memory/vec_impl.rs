@@ -22,7 +22,7 @@ impl<T: TimeSpan> Memory<T> for Vec<Elapsed<T>> {
 	}
 
 	fn clear(&mut self) {
-		todo!()
+		Vec::clear(self)
 	}
 }
 

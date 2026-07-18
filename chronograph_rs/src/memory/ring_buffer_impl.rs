@@ -25,6 +25,6 @@ impl<const N: usize, T: TimeSpan, C: FixedIndexCoordinator<N>> Memory<T>
 	}
 
 	fn clear(&mut self) {
-		todo!()
+		CircularBuffer::clear(self);
 	}
 }
