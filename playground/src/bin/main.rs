@@ -1,3 +1,3 @@
-use chronograph_rs::Chronograph;
+struct Foo<'a>(&'a str);
 
 fn main() {}
