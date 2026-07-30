@@ -10,6 +10,10 @@ impl<T: TimeSpan, C: ResizableIndexCoordinator> Memory<T> for Buffer<Elapsed<T>,
 		Self: 'a,
 		T: 'a;
 
+	fn empty_like(&self) -> Self {
+		todo!()
+	}
+
 	fn iter(&self) -> Self::Iter<'_> {
 		<Buffer<Elapsed<T>, C> as CircularBuffer<Elapsed<T>>>::iter(self)
 	}
