@@ -9,10 +9,6 @@ impl<T: TimeSpan> Memory<T> for Vec<Elapsed<T>> {
 		Self: 'a,
 		T: 'a;
 
-	fn empty_like(&self) -> Self {
-		Self::default()
-	}
-
 	fn iter(&self) -> Self::Iter<'_> {
 		self.as_slice().iter()
 	}

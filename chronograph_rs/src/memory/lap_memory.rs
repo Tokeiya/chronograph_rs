@@ -8,7 +8,6 @@ pub trait Memory<T: TimeSpan>: Index<usize, Output = Elapsed<T>> {
 		Self: 'a,
 		T: 'a;
 
-	fn empty_like(&self) -> Self;
 	fn iter(&self) -> Self::Iter<'_>;
 	fn push(&mut self, value: Elapsed<T>);
 	fn len(&self) -> usize;

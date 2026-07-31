@@ -12,10 +12,6 @@ impl<const N: usize, T: TimeSpan, C: FixedIndexCoordinator<N>> Memory<T>
 		Self: 'a,
 		T: 'a;
 
-	fn empty_like(&self) -> Self {
-		Self::default()
-	}
-
 	fn iter(&self) -> Self::Iter<'_> {
 		<Buffer<Elapsed<T>, C, N> as CircularBuffer<Elapsed<T>>>::iter(self)
 	}
